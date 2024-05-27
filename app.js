@@ -10,7 +10,7 @@ app.use(express.json())
 
 mongoose.set('strictQuery', false)
 
-mongoose    
+mongoose
   .connect(config.MONGO_URI)
   .then(() => {
     print.info('connected to', config.MONGO_URI, '...')
