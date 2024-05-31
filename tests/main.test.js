@@ -20,6 +20,7 @@ in main.test.js:
         - general
 */
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const { test, describe, after, beforeEach } = require('node:test')
 const print = require('../utils/print')
 const assert = require('node:assert')
@@ -39,7 +40,7 @@ beforeEach(async () => {
   //   })
 })
 
-describe('basic tests', () => {
+describe('blog tests', () => {
   test('fetch list of blogs', async () => {
     const response = await api
       .get('/api/blogs')
@@ -97,7 +98,6 @@ describe('basic tests', () => {
 
   test('404 Not Found for failed delete operation with an invalid blog id', async () => {
     const phonyID = await helper.getFakeID()
-    print.error(phonyID)
     await api.delete(`/api/blogs/${phonyID}`).expect(404)
   })
 
@@ -126,6 +126,9 @@ describe('basic tests', () => {
   })
 })
 
+describe('user tests', () => {
+  test('')
+})
 after(async () => {
   await mongoose.connection.close()
   print.info('disconnecting from DB...')

@@ -1,9 +1,16 @@
+/* todo: 
+- backend routing (creating a user)
+- user model
+- bcrypt + jsontokenauth
+- blogs must be associated with users
+*/
 const config = require('./utils/config')
 const express = require('express')
 const app = express()
 const cors = require('cors')
-const blogRouter = require('./controllers/blogRouter')
-// const middleware = require('./utils/middleware')
+const blogRouter = require('./controllers/blog')
+const userRouter = require('./controllers/user')
+const middleware = require('./utils/middleware')
 const print = require('./utils/print')
 const mongoose = require('mongoose')
 app.use(express.json())
@@ -23,5 +30,7 @@ app.use(cors())
 app.use(express.static('dist'))
 app.use(express.json())
 app.use('/api/blogs', blogRouter)
+app.use('/api/users', userRouter)
 
+app.use(middleware.errorHandler)
 module.exports = app

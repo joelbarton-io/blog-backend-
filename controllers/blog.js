@@ -1,5 +1,5 @@
 const blogRouter = require('express').Router()
-const print = require('../utils/print')
+// const print = require('../utils/print')
 require('express-async-errors')
 const Blog = require('../models/blog')
 
@@ -16,7 +16,6 @@ blogRouter.post('/', async (request, response) => {
     // hence the try catch
     response.status(201).json(result)
   } catch (exception) {
-    print.info(exception) // won't log
     response.status(400).end()
   }
 })
