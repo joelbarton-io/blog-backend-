@@ -12,13 +12,13 @@ usersRouter.post('/', async (request, response) => {
     return response.status(400).json({ error: 'invalid username' })
   }
 
-  const what = await User.find({ username })
+  const list = await User.find({ username })
 
-  if (what && what.length) {
+  if (list && list.length) {
     return response.status(400).json({ error: 'username must be unique' })
   }
 
-  if (!password || username.length < 3) {
+  if (!password || password.length < 3) {
     return response.status(400).json({ error: 'invalid password' })
   }
 

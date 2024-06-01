@@ -64,10 +64,16 @@ const validUser = {
   password: "let's do this",
 }
 
-const invalidUserNameUser = {
+const invalidUser1 = {
   username: 'i',
   name: 'invalid username length',
-  password: 'xd',
+  password: 'a valid password',
+}
+
+const invalidUser2 = {
+  username: 'valid username',
+  name: 'invalid password length',
+  password: 'i',
 }
 
 const dupUser = {
@@ -89,6 +95,7 @@ module.exports = {
   usersInDb,
   rootUser,
   validUser,
-  invalidUserNameUser,
+  invalidUser1,
+  invalidUser2,
   dupUser,
 }

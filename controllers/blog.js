@@ -1,23 +1,33 @@
 const blogRouter = require('express').Router()
-// const print = require('../utils/print')
+const print = require('../utils/print')
 require('express-async-errors')
 const Blog = require('../models/blog')
-
+const User = require('../models/user')
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
   response.status(200).json(blogs)
 })
 
 blogRouter.post('/', async (request, response) => {
-  try {
-    const blog = new Blog(request.body)
-    const result = await blog.save()
-    // when testing for failed create with missing body properties, the error is 500 bears a mongo/mongoose error
-    // hence the try catch
-    response.status(201).json(result)
-  } catch (exception) {
-    response.status(400).end()
-  }
+  const { title, author, url, likes, user } = request.body
+  //   print.error({ title, author, url, likes, user })
+
+  const associatedUser = await User.findById(user)
+
+  const blog = new Blog({
+    title,
+    author,
+    url,
+    likes: likes === undefined ? 0 : likes,
+    user,
+  })
+
+  const savedBlog = await blog.save()
+  //   print.error({ savedBlog })
+  associatedUser.blogs = associatedUser.blogs.concat(savedBlog._id)
+  await associatedUser.save()
+  //   print.error({ associatedUser })
+  response.status(201).json(savedBlog)
 })
 
 blogRouter.delete('/:id', async (req, res) => {
