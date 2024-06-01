@@ -4,29 +4,41 @@ require('express-async-errors')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 blogRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
+  //   print.error({ blogs })
   response.status(200).json(blogs)
 })
 
 blogRouter.post('/', async (request, response) => {
   const { title, author, url, likes, user } = request.body
-  //   print.error({ title, author, url, likes, user })
+
+  if (!user) {
+    return response
+      .status(400)
+      .json({ error: 'notes must be associated with a user' })
+  }
+
+  if (!title || !url) {
+    return response
+      .status(400)
+      .json({ error: 'title and url must be valid strings' })
+  }
 
   const associatedUser = await User.findById(user)
-
   const blog = new Blog({
     title,
     author,
     url,
     likes: likes === undefined ? 0 : likes,
-    user,
+    user: associatedUser._id,
   })
 
+  //   print.error({ reqBody: { title, author, url, likes, user }, blog })
   const savedBlog = await blog.save()
-  //   print.error({ savedBlog })
+
   associatedUser.blogs = associatedUser.blogs.concat(savedBlog._id)
   await associatedUser.save()
-  //   print.error({ associatedUser })
+  print.error({ associatedUser, savedBlog })
   response.status(201).json(savedBlog)
 })
 

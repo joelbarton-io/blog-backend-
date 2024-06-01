@@ -33,6 +33,8 @@ const api = supertest(app)
 
 beforeEach(async () => {
   await User.deleteMany({})
+  await Blog.deleteMany({})
+
   const { username, name, password } = helper.rootUser
 
   const saltRounds = 10
@@ -44,13 +46,15 @@ beforeEach(async () => {
     passwordHash,
   })
 
-  const rootUser = await newUser.save()
+  const user = await newUser.save()
+  const blogObjects = helper.initialBlogs.map(
+    (o) => new Blog({ ...o, user: user.id })
+  )
 
-  await Blog.deleteMany({})
-  const blogObjects = helper.initialBlogs.map((o) => {
-    return new Blog({ ...o, user: rootUser })
-  })
-  await Promise.all(blogObjects.map((blog) => blog.save()))
+  const savedBlogs = await Promise.all(blogObjects.map((blog) => blog.save()))
+
+  newUser.blogs = savedBlogs.map((blog) => blog._id)
+  await newUser.save()
 })
 
 describe('blog tests', () => {
@@ -102,15 +106,18 @@ describe('blog tests', () => {
     // print.error({ userId: users[0].id, noteUser: postReq.body.user })
   })
 
-  test("'likes' property must is present in the post request's data", async () => {
+  test("if absent, 'likes' value is 0", async () => {
+    const users = await User.find({ username: 'root' })
+    const blog = {
+      title: 'Test Blog 10000000',
+      author: 'LEROY JENKINS',
+      url: 'http://www.testLEROY.com',
+      user: users[0].id,
+    }
     const postReq = await api
       .post('/api/blogs')
-      .send({
-        title: 'Test Blog 10000000',
-        author: 'LEROY JENKINS',
-        url: 'http://www.testLEROY.com',
-      })
-      .expect(400)
+      .send(blog)
+      .expect(201)
       .expect('Content-Type', /application\/json/)
 
     // print.error(postReq.body)
@@ -119,6 +126,7 @@ describe('blog tests', () => {
 
   test("400 Bad Request if either the 'title' or 'url' property is missing", async () => {
     const postReq = await api.post('/api/blogs').send({}).expect(400)
+    // print.error({ error: postReq.body.error })
     assert.strictEqual(postReq.status, 400)
   })
 

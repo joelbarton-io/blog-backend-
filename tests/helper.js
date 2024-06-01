@@ -36,15 +36,18 @@ const validTestBlog = {
 }
 
 const getFakeID = async () => {
-  const temporary = new Blog({
+  const users = await User.find({ username: 'root' })
+
+  const temporaryBlog = new Blog({
     title: 'TEMPORARY',
     author: 'TEMPORARY',
     url: 'TEMPORARY',
     likes: 321,
+    user: users[0].id,
   })
-  await temporary.save()
-  await temporary.deleteOne()
-  return temporary._id.toString()
+  await temporaryBlog.save()
+  await temporaryBlog.deleteOne()
+  return temporaryBlog._id.toString()
 }
 
 const blogsInDb = async () => {
