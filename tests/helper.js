@@ -1,4 +1,5 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const initialBlogs = [
   {
@@ -50,9 +51,44 @@ const blogsInDb = async () => {
   const blogs = await Blog.find({})
   return blogs.map((blog) => blog.toJSON())
 }
+
+const rootUser = {
+  username: 'root',
+  name: 'rootie',
+  password: '123abc',
+}
+
+const validUser = {
+  username: 'leroy',
+  name: 'leroy jenkins',
+  password: "let's do this",
+}
+
+const invalidUserNameUser = {
+  username: 'i',
+  name: 'invalid username length',
+  password: 'xd',
+}
+
+const dupUser = {
+  username: 'root',
+  name: 'IMPOSTER',
+  password: 'abc123',
+}
+
+const usersInDb = async () => {
+  const users = await User.find({})
+  return users.map((user) => user.toJSON())
+}
+
 module.exports = {
   validTestBlog,
   initialBlogs,
   getFakeID,
   blogsInDb,
+  usersInDb,
+  rootUser,
+  validUser,
+  invalidUserNameUser,
+  dupUser,
 }
