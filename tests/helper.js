@@ -58,7 +58,7 @@ const blogsInDb = async () => {
 const rootUser = {
   username: 'root',
   name: 'rootie',
-  password: '123abc',
+  password: 'abc123',
 }
 
 const validUser = {

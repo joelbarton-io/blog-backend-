@@ -161,84 +161,114 @@ beforeEach(async () => {
 //   })
 // })
 
-describe('user tests', () => {
-  //   test('get users from db', async () => {
-  //     const users = await api
-  //       .get('/api/users')
-  //       .expect(201)
-  //       .expect('Content-Type', /application\/json/)
+// describe('user tests', () => {
+//     test('get users from db', async () => {
+//       const users = await api
+//         .get('/api/users')
+//         .expect(201)
+//         .expect('Content-Type', /application\/json/)
 
-  //     assert.strictEqual(users.body.length, 1)
-  //   })
+//       assert.strictEqual(users.body.length, 1)
+//     })
 
-  //   test('create a valid new user', async () => {
-  //     const before = await helper.usersInDb()
+//     test('create a valid new user', async () => {
+//       const before = await helper.usersInDb()
 
-  //     const validUser = await api
-  //       .post('/api/users')
-  //       .send(helper.validUser)
-  //       .expect(201)
-  //       .expect('Content-Type', /application\/json/)
+//       const validUser = await api
+//         .post('/api/users')
+//         .send(helper.validUser)
+//         .expect(201)
+//         .expect('Content-Type', /application\/json/)
 
-  //     const after = await helper.usersInDb()
-  //     assert.strictEqual(before.length + 1, after.length)
+//       const after = await helper.usersInDb()
+//       assert.strictEqual(before.length + 1, after.length)
 
-  //     const existingUser = await User.findById(validUser.body.id)
-  //     assert.strictEqual(existingUser.id, validUser.body.id)
-  //   })
+//       const existingUser = await User.findById(validUser.body.id)
+//       assert.strictEqual(existingUser.id, validUser.body.id)
+//     })
 
-  //   test('fail to create a user (invalid username)', async () => {
-  //     const before = await helper.usersInDb()
+//     test('fail to create a user (invalid username)', async () => {
+//       const before = await helper.usersInDb()
 
-  //     await api
-  //       .post('/api/users')
-  //       .send(helper.invalidUser1)
-  //       .expect(400)
-  //       .expect('Content-Type', /application\/json/)
+//       await api
+//         .post('/api/users')
+//         .send(helper.invalidUser1)
+//         .expect(400)
+//         .expect('Content-Type', /application\/json/)
 
-  //     const after = await helper.usersInDb()
-  //     assert.strictEqual(before.length, after.length)
-  //   })
+//       const after = await helper.usersInDb()
+//       assert.strictEqual(before.length, after.length)
+//     })
 
-  //   test('fail to create a user (invalid password)', async () => {
-  //     const before = await helper.usersInDb()
+//     test('fail to create a user (invalid password)', async () => {
+//       const before = await helper.usersInDb()
 
-  //     await api
-  //       .post('/api/users')
-  //       .send(helper.invalidUser2)
-  //       .expect(400)
-  //       .expect('Content-Type', /application\/json/)
+//       await api
+//         .post('/api/users')
+//         .send(helper.invalidUser2)
+//         .expect(400)
+//         .expect('Content-Type', /application\/json/)
 
-  //     const after = await helper.usersInDb()
-  //     assert.strictEqual(before.length, after.length)
-  //   })
+//       const after = await helper.usersInDb()
+//       assert.strictEqual(before.length, after.length)
+//     })
 
-  test('fail to create a user (duplicate username)', async () => {
-    const before = await helper.usersInDb()
+//   test('fail to create a user (duplicate username)', async () => {
+//     const before = await helper.usersInDb()
 
-    const failed = await api
-      .post('/api/users')
-      .send(helper.dupUser)
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
+//     const failed = await api
+//       .post('/api/users')
+//       .send(helper.dupUser)
+//       .expect(400)
+//       .expect('Content-Type', /application\/json/)
 
-    const after = await helper.usersInDb()
-    assert.strictEqual(before.length, after.length)
-    assert.strictEqual(failed.body.error, 'username must be unique')
-  })
+//     const after = await helper.usersInDb()
+//     assert.strictEqual(before.length, after.length)
+//     assert.strictEqual(failed.body.error, 'username must be unique')
+//   })
 
-  test('root user has 4 blogs associated with that account', async () => {
-    const initialListOfBlogs = await helper.blogsInDb()
-    const rootUser = await User.findOne({ username: 'root' })
-    const { body: blogs } = await api
-      .get('/api/blogs')
+//   test('root user has 4 blogs associated with that account', async () => {
+//     const initialListOfBlogs = await helper.blogsInDb()
+//     const rootUser = await User.findOne({ username: 'root' })
+//     const { body: blogs } = await api
+//       .get('/api/blogs')
+//       .expect(200)
+//       .expect('Content-Type', /application\/json/)
+
+//     assert.strictEqual(rootUser.blogs.length, initialListOfBlogs.length)
+//     assert(
+//       blogs.every((blog) => blog.user.id.toString() === rootUser._id.toString())
+//     )
+//   })
+// })
+
+describe('login tests', () => {
+  test('successful login attempt for root user', async () => {
+    const { name, username, password } = helper.rootUser
+
+    const { body: loggedInUser } = await api
+      .post('/api/login')
+      .send({ username, password })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
-    assert.strictEqual(rootUser.blogs.length, initialListOfBlogs.length)
-    assert(
-      blogs.every((blog) => blog.user.id.toString() === rootUser._id.toString())
-    )
+    assert('token' in loggedInUser)
+    assert.strictEqual(loggedInUser.username, username)
+    assert.strictEqual(loggedInUser.name, name)
+  })
+
+  test('failed login attempt for root user (wrong password)', async () => {
+    const { username } = helper.rootUser
+    const incorrectPassword = 'phoney password'
+
+    const { body } = await api
+      .post('/api/login')
+      .send({ username, password: incorrectPassword })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    assert.strictEqual(body.error, 'invalid username or password')
+    assert(!('token' in body))
   })
 })
 

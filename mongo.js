@@ -1,5 +1,7 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
+
 const Blog = require('./models/blog')
 const User = require('./models/user')
 const print = require('./utils/print')
@@ -27,10 +29,14 @@ async function manageDatabase() {
     print.info(`deleted: ${blogDeleteResult.deletedCount}`)
 
     print.info('creating a root user...')
+
+    const saltRounds = 10
+    const passwordHash = await bcrypt.hash('abc123', saltRounds)
+
     const root = new User({
       username: 'root',
       name: 'rootie',
-      password: '123abc',
+      passwordHash,
     })
 
     print.info('saving root user to db...')
