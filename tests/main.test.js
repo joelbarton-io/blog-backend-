@@ -21,6 +21,7 @@ in main.test.js:
 */
 const Blog = require('../models/blog')
 const User = require('../models/user')
+require('express-async-errors')
 const { test, describe, after, beforeEach } = require('node:test')
 const print = require('../utils/print')
 const assert = require('node:assert')
@@ -166,8 +167,8 @@ describe('user tests', () => {
       .get('/api/users')
       .expect(201)
       .expect('Content-Type', /application\/json/)
+
     assert.strictEqual(users.body.length, 1)
-    // print.error(users.body)
   })
 
   test('create a valid new user', async () => {
