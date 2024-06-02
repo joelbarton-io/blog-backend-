@@ -1,8 +1,10 @@
 const blogRouter = require('express').Router()
+const jwt = require('jsonwebtoken')
 const print = require('../utils/print')
 require('express-async-errors')
 const Blog = require('../models/blog')
 const User = require('../models/user')
+
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
   //   print.error({ blogs })
@@ -11,6 +13,12 @@ blogRouter.get('/', async (request, response) => {
 
 blogRouter.post('/', async (request, response) => {
   const { title, author, url, likes, user } = request.body
+  /* global process */
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'token invalid' })
+  }
 
   if (!user) {
     return response
@@ -24,21 +32,20 @@ blogRouter.post('/', async (request, response) => {
       .json({ error: 'title and url must be valid strings' })
   }
 
-  const associatedUser = await User.findById(user)
+  const loggedInUser = await User.findById(decodedToken.id)
+
   const blog = new Blog({
     title,
     author,
     url,
     likes: likes === undefined ? 0 : likes,
-    user: associatedUser._id,
+    user: loggedInUser._id,
   })
 
-  //   print.error({ reqBody: { title, author, url, likes, user }, blog })
   const savedBlog = await blog.save()
 
-  associatedUser.blogs = associatedUser.blogs.concat(savedBlog._id)
-  await associatedUser.save()
-  print.error({ associatedUser, savedBlog })
+  loggedInUser.blogs = loggedInUser.blogs.concat(savedBlog._id)
+  await loggedInUser.save()
   response.status(201).json(savedBlog)
 })
 
