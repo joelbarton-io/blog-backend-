@@ -43,7 +43,6 @@ const mostLikes = (blogs) => {
 
   blogs.reduce(reducer, {})
 
-//   console.error(`'author with most likes: '${maxLikesAuthor}`)
   return maxLikesAuthor
 }
 

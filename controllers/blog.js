@@ -2,16 +2,15 @@ const blogRouter = require('express').Router()
 const print = require('../utils/print')
 require('express-async-errors')
 const Blog = require('../models/blog')
+const middleware = require('../utils/middleware')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
-  //   print.error({ blogs })
   response.status(200).json(blogs)
 })
 
-blogRouter.post('/', async (request, response) => {
+blogRouter.post('/', middleware.userExtractor, async (request, response) => {
   const { title, author, url, likes, user } = request.body
-  /* global process */
 
   if (!user) {
     return response
@@ -41,30 +40,34 @@ blogRouter.post('/', async (request, response) => {
   response.status(201).json(savedBlog)
 })
 
-blogRouter.delete('/:id', async (request, response) => {
-  const loggedInUser = request.user
+blogRouter.delete(
+  '/:id',
+  middleware.userExtractor,
+  async (request, response) => {
+    const loggedInUser = request.user
 
-  const blogToDelete = await Blog.findById(request.params.id)
-  if (!blogToDelete) return response.status(404).end()
+    const blogToDelete = await Blog.findById(request.params.id)
+    if (!blogToDelete) return response.status(404).end()
 
-  const blogCreatorId = loggedInUser._id.toString()
-  const loggedInUserId = blogToDelete.user.toString()
+    const blogCreatorId = loggedInUser._id.toString()
+    const loggedInUserId = blogToDelete.user.toString()
 
-  if (blogCreatorId !== loggedInUserId) {
-    response.status(401).json({
-      error: 'invalid action',
-    })
+    if (blogCreatorId !== loggedInUserId) {
+      response.status(401).json({
+        error: 'invalid action',
+      })
+    }
+
+    await Blog.findByIdAndDelete(request.params.id)
+
+    loggedInUser.blogs = loggedInUser.blogs.filter(
+      (blogId) => blogId.toString() !== request.params.id
+    )
+    await loggedInUser.save()
+
+    response.status(204).end()
   }
-
-  const res = await Blog.findByIdAndDelete(request.params.id)
-
-  loggedInUser.blogs = loggedInUser.blogs.filter(
-    (blogId) => blogId.toString() !== request.params.id
-  )
-  await loggedInUser.save()
-  print.info({ res })
-  response.status(204).end()
-})
+)
 
 blogRouter.put('/:id', async (request, response) => {
   const body = request.body
