@@ -1,9 +1,7 @@
 const blogRouter = require('express').Router()
-const jwt = require('jsonwebtoken')
 const print = require('../utils/print')
 require('express-async-errors')
 const Blog = require('../models/blog')
-const User = require('../models/user')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
@@ -14,11 +12,6 @@ blogRouter.get('/', async (request, response) => {
 blogRouter.post('/', async (request, response) => {
   const { title, author, url, likes, user } = request.body
   /* global process */
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'token invalid' })
-  }
 
   if (!user) {
     return response
@@ -32,8 +25,7 @@ blogRouter.post('/', async (request, response) => {
       .json({ error: 'title and url must be valid strings' })
   }
 
-  const loggedInUser = await User.findById(decodedToken.id)
-
+  const loggedInUser = request.user
   const blog = new Blog({
     title,
     author,
@@ -49,11 +41,29 @@ blogRouter.post('/', async (request, response) => {
   response.status(201).json(savedBlog)
 })
 
-blogRouter.delete('/:id', async (req, res) => {
-  const blog = await Blog.findById(req.params.id)
-  if (!blog) return res.status(404).end()
-  await Blog.findByIdAndDelete(req.params.id)
-  res.status(204).end()
+blogRouter.delete('/:id', async (request, response) => {
+  const loggedInUser = request.user
+
+  const blogToDelete = await Blog.findById(request.params.id)
+  if (!blogToDelete) return response.status(404).end()
+
+  const blogCreatorId = loggedInUser._id.toString()
+  const loggedInUserId = blogToDelete.user.toString()
+
+  if (blogCreatorId !== loggedInUserId) {
+    response.status(401).json({
+      error: 'invalid action',
+    })
+  }
+
+  const res = await Blog.findByIdAndDelete(request.params.id)
+
+  loggedInUser.blogs = loggedInUser.blogs.filter(
+    (blogId) => blogId.toString() !== request.params.id
+  )
+  await loggedInUser.save()
+  print.info({ res })
+  response.status(204).end()
 })
 
 blogRouter.put('/:id', async (request, response) => {

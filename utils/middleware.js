@@ -1,5 +1,7 @@
 const print = require('./print')
 // const morgan = require('morgan')
+const jwt = require('jsonwebtoken')
+const User = require('../models/user')
 
 const requestLogger = (request, response, next) => {
   print.info('Method:', request.method)
@@ -39,8 +41,20 @@ const tokenExtractor = (request, response, next) => {
   next()
 }
 
+/* global process */
+const userExtractor = async (request, response, next) => {
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+  const data = { error: 'token invalid' }
+  const code = 401
+
+  if (!decodedToken.id) return response.status(code).json(data)
+
+  request.user = await User.findById(decodedToken.id)
+  next()
+}
 module.exports = {
   requestLogger,
   errorHandler,
   tokenExtractor,
+  userExtractor,
 }

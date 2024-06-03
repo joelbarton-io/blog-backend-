@@ -14,6 +14,7 @@ const schemaOptions = {
 
 const toJSONOptions = {
   transform: (document, returnedObject) => {
+    console.log(returnedObject)
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject.__v
     delete returnedObject._id
