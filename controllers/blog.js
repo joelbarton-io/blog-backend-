@@ -6,13 +6,15 @@ const middleware = require('../utils/middleware')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
+
   response.status(200).json(blogs)
 })
 
 blogRouter.post('/', middleware.userExtractor, async (request, response) => {
-  const { title, author, url, likes, user } = request.body
+  const { title, author, url, likes } = request.body
+  const loggedInUser = request.user
 
-  if (!user) {
+  if (!loggedInUser) {
     return response
       .status(400)
       .json({ error: 'notes must be associated with a user' })
@@ -24,7 +26,6 @@ blogRouter.post('/', middleware.userExtractor, async (request, response) => {
       .json({ error: 'title and url must be valid strings' })
   }
 
-  const loggedInUser = request.user
   const blog = new Blog({
     title,
     author,
@@ -69,18 +70,33 @@ blogRouter.delete(
   }
 )
 
-blogRouter.put('/:id', async (request, response) => {
-  const body = request.body
-  const blog = {
-    title: body.title,
-    author: body.author,
-    url: body.url,
-    likes: body.likes,
+blogRouter.put('/:id', middleware.userExtractor, async (request, response) => {
+  const loggedInUser = request.user
+  const { user, author, title, url } = request.body
+
+  if (!loggedInUser) {
+    return response.status(401).send({ error: 'invalid user action' })
   }
+
+  if (!('likes' in request.body) || !user || !author || !title || !url) {
+    return response
+      .status(400)
+      .send({ error: 'request was missing a required data field' })
+  }
+
+  const blog = {
+    likes: request.body.likes++,
+    user,
+    author,
+    title,
+    url,
+  }
+
   const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {
     new: true,
   })
-  response.json(updatedBlog)
+
+  response.status(201).json(updatedBlog)
 })
 
 module.exports = blogRouter
