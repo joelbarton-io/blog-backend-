@@ -33,12 +33,23 @@ blogRouter.post('/', middleware.userExtractor, async (request, response) => {
     likes: likes === undefined ? 0 : likes,
     user: loggedInUser._id,
   })
-
   const savedBlog = await blog.save()
 
   loggedInUser.blogs = loggedInUser.blogs.concat(savedBlog._id)
   await loggedInUser.save()
-  response.status(201).json(savedBlog)
+
+  response.status(201).json({
+    id: savedBlog._id,
+    title: savedBlog.title,
+    author: savedBlog.author,
+    likes: savedBlog.likes,
+    url: savedBlog.url,
+    user: {
+      id: loggedInUser._id,
+      name: loggedInUser.name,
+      username: loggedInUser.username,
+    },
+  })
 })
 
 blogRouter.delete(
@@ -72,31 +83,36 @@ blogRouter.delete(
 
 blogRouter.put('/:id', middleware.userExtractor, async (request, response) => {
   const loggedInUser = request.user
-  const { user, author, title, url } = request.body
+  const blog = request.body
 
   if (!loggedInUser) {
     return response.status(401).send({ error: 'invalid user action' })
   }
 
-  if (!('likes' in request.body) || !user || !author || !title || !url) {
+  if (
+    !('likes' in blog) ||
+    !blog.user ||
+    !blog.author ||
+    !blog.title ||
+    !blog.url
+  ) {
     return response
       .status(400)
       .send({ error: 'request was missing a required data field' })
   }
 
-  const blog = {
-    likes: request.body.likes++,
-    user,
-    author,
-    title,
-    url,
-  }
-
+  blog.likes++
   const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {
     new: true,
   })
 
-  response.status(201).json(updatedBlog)
+  response.status(201).json({
+    likes: updatedBlog.likes,
+    author: updatedBlog.author,
+    title: updatedBlog.title,
+    url: updatedBlog.url,
+    user: blog.user,
+  })
 })
 
 module.exports = blogRouter
